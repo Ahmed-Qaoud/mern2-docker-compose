@@ -1,0 +1,48 @@
+version: "3.9"
+
+services:
+  mongo:
+    image: mongo:4.4
+    container_name: mern_mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongo localhost:27017/mernapp --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mern-net
+
+  backend:
+    build: ./backend
+    container_name: mern_backend
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/mernapp
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - mern-net
+
+  frontend:
+    build: ./frontend
+    container_name: mern_frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - mern-net
+
+volumes:
+  mongo_data:
+
+networks:
+  mern-net:
+    driver: bridge
+
